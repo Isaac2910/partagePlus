@@ -1,27 +1,29 @@
 from django.db import models
-#from django.contrib.auth.models import AbstractBaseUser 
+from django.contrib.auth.models import AbstractBaseUser 
 
-
-class User(models.Model):
+class User(AbstractBaseUser):
     id_user = models.BigAutoField(primary_key=True)
-    username = models.CharField(max_length=50)
+    username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128)
+    
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
-    photo_profil = models.JSONField()
-    ville = models.CharField()
-
-    est_actif = models.BooleanField()
-
-
-    date_inscription = models.DateTimeField(auto_now_add=True)
-
-    dernierre_connection = models.DateTimeField()
+    last_login = models.DateTimeField(auto_now=True)
 
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
+    photo_profil = models.JSONField(blank=True, null=True)
 
+    date_inscription = models.DateTimeField(auto_now_add=True)
+
+    ville = models.CharField(max_length=100, null=True, blank=True)
+
+
+
+    
 
     def __str__(self):
         return self.username
@@ -87,4 +89,30 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f"{self.id_user.username} - {self.status} - {self.date_reservation}"
+
+
+class notification(models.Model):
+    id_notification = models.BigAutoField(primary_key=True)
+    message = models.TextField()
+    date_notification = models.DateTimeField(auto_now_add=True)
+    statut = models.CharField(max_length=20, choices=[("non_lu", "Non lu"), ("lu", "Lu")], default="non_lu")
+
+    #clef e User_Reserv
+    id_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name ='notifications')
     
+    def __str__(self):
+        return f"{self.id_user.username} - {self.statut} - {self.date_notification}"
+    
+
+
+class Signalisation(models.Model):
+    id_signalisation = models.BigAutoField(primary_key=True)
+    message = models.TextField()
+    date_signalisation = models.DateTimeField(auto_now_add=True)
+    statut = models.CharField(max_length=20, choices=[("non_lu", "Non lu"), ("lu", "Lu")], default="non_lu")
+
+    #clef e User_Reserv
+    id_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name ='signalisations')
+    
+    def __str__(self):
+        return f"{self.id_user.username} - {self.statut} - {self.date_signalisation} - {self.message}"
