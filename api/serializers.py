@@ -1,24 +1,30 @@
 from rest_framework import serializers
 
+from rest_framework.renderers import JSONRenderer
+
 from .models import User, Categorie, Don, Reservation
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id_user', 'username', 'email', 'first_name', 'last_name', 'latitude', 'longitude']
+        fields = ['id_user', 'username', 'email', 'latitude', 'longitude']
 
 
 
 class CategorieSerializer(serializers.ModelSerializer):
+
+    
     class Meta:
         model = Categorie
         fields = ['id_categorie', 'nom_categorie', 'description']
+
+    
 
 
 class DonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Don
-        fields = ['id_don', 'titre', 'description', 'date_debut', 'date_fin', 'id_categorie']
+        fields = ['id_don', 'titre', 'description', 'date_publier', 'date_expiration', 'id_categorie']
 
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,7 +35,7 @@ class ReservationSerializer(serializers.ModelSerializer):
 class notificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['id_reservation', 'id_user', 'id_don', 'date_reservation'] 
+        fields = ['id_reservation', 'id_user', 'date_reservation','message'] 
         
 
 class SignalerSerializer(serializers.ModelSerializer):
