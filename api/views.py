@@ -9,6 +9,7 @@ from rest_framework import generics
 from rest_framework.reverse import reverse
 
 from django.http import JsonResponse, response, HttpResponse
+from rest_framework import permissions
 
 
 #root view for the API
@@ -62,10 +63,15 @@ class UserListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
 class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'id_user'
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 
 
