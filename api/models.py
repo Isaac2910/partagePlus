@@ -1,118 +1,129 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser 
+from django.contrib.auth.models import AbstractUser
 
-class User(AbstractBaseUser):
+
+
+
+class User(AbstractUser):
+    # AbstractUser fournit déjà : id, username, email, password, is_active,
+    # is_staff, last_login, date_joined -> on n'ajoute que nos champs propres.
+
+
     id_user = models.BigAutoField(primary_key=True)
-    username = models.CharField(max_length=50, unique=True)
-    email = models.EmailField(unique=True)
-    password = models.CharField(max_length=128)
-    
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-
-    last_login = models.DateTimeField(auto_now=True)
 
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-
-    photo_profil = models.JSONField(blank=True, null=True)
-
-    date_inscription = models.DateTimeField(auto_now_add=True)
-
+    photo_profil = models.URLField(max_length=500, blank=True, null=True)
     ville = models.CharField(max_length=100, null=True, blank=True)
-
-
-
-    
 
     def __str__(self):
         return self.username
-    
-#
+
+
 class Categorie(models.Model):
     id_categorie = models.BigAutoField(primary_key=True)
     nom_categorie = models.CharField(max_length=50, unique=True)
     description = models.TextField(max_length=200)
 
-    def  __str__(self):
+    def __str__(self):
         return self.nom_categorie
-    
 
-
-    
 
 class Don(models.Model):
     id_don = models.BigAutoField(primary_key=True)
+    STATUT_CHOICES = [
+        ("disponible", "Disponible"),
+        ("reserve", "Réservé"),
+        ("recupere", "Récupéré"),
+    ]
 
     titre = models.CharField(max_length=50)
     description = models.TextField(max_length=200)
-    type_don = models.CharField(max_length=50, choices=[("argent", "Argent"), ("nourriture", "Nourriture"), ("vetements", "Vêtements")])
     quantite = models.PositiveIntegerField()
+    photo_don = models.JSONField(max_length=500, blank=True, null=True)
 
-    photo_don = models.JSONField(blank=True, null=True)
-
+  
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-
     address = models.CharField(max_length=255, null=True, blank=True)
 
     date_publier = models.DateTimeField(auto_now_add=True)
     date_expiration = models.DateTimeField(null=True, blank=True)
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default="disponible")
+    message = models.TextField(blank=True, null=True)
 
-    statut = models.CharField(max_length=20, choices=[("disponible", "Disponible"), ("reserver", "Réservé")], default="disponible")
-
-    message = models.TextField()
-
-    #clef e user Don
-    id_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name ='dons')
-    #clef e don C
-    id_categorie = models.ForeignKey( Categorie, on_delete=models.CASCADE)
-
-    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dons')
+    # PROTECT au lieu de CASCADE : empêche la suppression d'une catégorie
+    # tant que des dons y sont rattachés.
+    categorie = models.ForeignKey(Categorie, on_delete=models.PROTECT, related_name='dons')
 
     def __str__(self):
-        return f"{self.id_user.username} - {self.statut} - {self.titre}"
-    
+        return f"{self.user.username} - {self.statut} - {self.titre}"
 
 
 class Reservation(models.Model):
-    id_reservation = models.BigAutoField(primary_key=True)
+    STATUT_CHOICES = [
+        ("en_attente", "En attente"),
+        ("confirme", "Confirmé"),
+        ("recupere", "Récupéré"),
+        ("annule", "Annulé"),  
+    ]
+
+    id_Reservation = models.BigAutoField(primary_key=True)
+
     date_reservation = models.DateTimeField(auto_now_add=True)
+    # Renommé status -> statut pour rester cohérent avec les autres modèles
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default="en_attente")
+    message = models.TextField(blank=True, null=True)
 
-    status = models.CharField(max_length=20, choices=[("en_attente", "En attente"), ("confirmer", "Confirmer"), ("recuperer", "Recuperer")], default="en_attente")
-    message = models.TextField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reservations')
+    don = models.ForeignKey(Don, on_delete=models.CASCADE, related_name='reservations')
 
-    #clef e User_Reserv
-    id_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name ='reservations')
-    
-    
+    class Meta:
+        constraints = [
+            # Empêche deux réservations actives simultanées sur le même don
+            models.UniqueConstraint(
+                fields=['don'],
+                condition=models.Q(statut__in=['en_attente', 'confirme']),
+                name='une_seule_reservation_active_par_don',
+            )
+        ]
 
     def __str__(self):
-        return f"{self.id_user.username} - {self.status} - {self.date_reservation}"
+        return f"Réservation par {self.user.username} pour {self.don.titre} ({self.statut})"
 
 
-class notification(models.Model):
+class Notification(models.Model):
+
     id_notification = models.BigAutoField(primary_key=True)
+    STATUT_CHOICES = [("non_lu", "Non lu"), ("lu", "Lu")]
+
     message = models.TextField()
     date_notification = models.DateTimeField(auto_now_add=True)
-    statut = models.CharField(max_length=20, choices=[("non_lu", "Non lu"), ("lu", "Lu")], default="non_lu")
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default="non_lu")
 
-    #clef e User_Reserv
-    id_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name ='notifications')
-    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+
     def __str__(self):
-        return f"{self.id_user.username} - {self.statut} - {self.date_notification}"
-    
+        return f"{self.user.username} - {self.statut}"
 
 
 class Signalisation(models.Model):
+    STATUT_CHOICES = [("non_lu", "Non lu"), ("lu", "Lu")]
+  
+
     id_signalisation = models.BigAutoField(primary_key=True)
     message = models.TextField()
     date_signalisation = models.DateTimeField(auto_now_add=True)
-    statut = models.CharField(max_length=20, choices=[("non_lu", "Non lu"), ("lu", "Lu")], default="non_lu")
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default="non_lu")
 
-    #clef e User_Reserv
-    id_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name ='signalisations')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='signalisations_faites')
     
+
+    
+
+
+
     def __str__(self):
-        return f"{self.id_user.username} - {self.statut} - {self.date_signalisation} - {self.message}"
+        cible = self.don_signale or self.utilisateur_signale
+        return f"Signalement de {self.user.username} - {self.message} - {self.statut}"
