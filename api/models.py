@@ -1,23 +1,48 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
+class UtilisateurManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("L'adresse email est obligatoire")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db) 
+        return user
 
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
 
+class User(AbstractBaseUser):
 
-class User(AbstractUser):
-    # AbstractUser fournit déjà : id, username, email, password, is_active,
-    # is_staff, last_login, date_joined -> on n'ajoute que nos champs propres.
-
-
+    
     id_user = models.BigAutoField(primary_key=True)
-
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    email = models.EmailField(unique=True)
+    nom = models.CharField(max_length=100)
+    prenom = models.CharField(max_length=100, blank=True, null=True)
+    telephone = models.CharField(max_length=20, blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     photo_profil = models.URLField(max_length=500, blank=True, null=True)
-    ville = models.CharField(max_length=100, null=True, blank=True)
+    ville = models.CharField(max_length=100, blank=True, null=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+    
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)  # Requis pour l'admin Django
+
+    objects = UtilisateurManager()
+
+    USERNAME_FIELD = 'email'  # Identifiant principal
+    REQUIRED_FIELDS = 'nom'  # Requis lors du createsuperuser
 
     def __str__(self):
-        return self.username
+        return self.email
+
+    
+
 
 
 class Categorie(models.Model):
