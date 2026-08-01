@@ -18,8 +18,26 @@ class UtilisateurManager(BaseUserManager):
 
 class User(AbstractBaseUser):
 
+
+
+    ROLE_CHOISE = [
+
+        ("beneficiaire", "bénéficiaire"),
+        ("donateur", "donateur"),
+        
+        
+
+    ]
+
+    
+
+    
+
     
     id_user = models.BigAutoField(primary_key=True)
+
+    Role_user = models.CharField(max_length=20, choices=ROLE_CHOISE, default="beneficiaire")
+
     email = models.EmailField(unique=True)
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100, blank=True, null=True)
@@ -32,6 +50,9 @@ class User(AbstractBaseUser):
     
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)  # Requis pour l'admin Django
+
+    last_login = models.DateTimeField(auto_now=True)
+    date_cration = models.DateTimeField(auto_now_add=True)
 
     objects = UtilisateurManager()
 
@@ -74,16 +95,15 @@ class Don(models.Model):
 
     date_publier = models.DateTimeField(auto_now_add=True)
     date_expiration = models.DateTimeField(null=True, blank=True)
-    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default="disponible")
+    statut_don = models.CharField(max_length=20, choices=STATUT_CHOICES, default="disponible")
     message = models.TextField(blank=True, null=True)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dons')
-    # PROTECT au lieu de CASCADE : empêche la suppression d'une catégorie
-    # tant que des dons y sont rattachés.
+
     categorie = models.ForeignKey(Categorie, on_delete=models.PROTECT, related_name='dons')
 
     def __str__(self):
-        return f"{self.user.username} - {self.statut} - {self.titre}"
+        return f"{self.user.username} - {self.statut_don} - {self.titre}"
 
 
 class Reservation(models.Model):
@@ -97,8 +117,8 @@ class Reservation(models.Model):
     id_Reservation = models.BigAutoField(primary_key=True)
 
     date_reservation = models.DateTimeField(auto_now_add=True)
-    # Renommé status -> statut pour rester cohérent avec les autres modèles
-    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default="en_attente")
+
+    statut_Reserv = models.CharField(max_length=20, choices=STATUT_CHOICES, default="en_attente")
     message = models.TextField(blank=True, null=True)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reservations')
@@ -109,13 +129,13 @@ class Reservation(models.Model):
             # Empêche deux réservations actives simultanées sur le même don
             models.UniqueConstraint(
                 fields=['don'],
-                condition=models.Q(statut__in=['en_attente', 'confirme']),
+                condition=models.Q(statut_Reserv__in=['en_attente', 'confirme']),
                 name='une_seule_reservation_active_par_don',
             )
         ]
 
     def __str__(self):
-        return f"Réservation par {self.user.username} pour {self.don.titre} ({self.statut})"
+        return f"Réservation par {self.user.username} pour {self.don.titre} ({self.statut_Reserv})"
 
 
 class Notification(models.Model):
