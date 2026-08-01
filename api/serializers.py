@@ -2,12 +2,14 @@ from rest_framework import serializers
 
 from rest_framework.renderers import JSONRenderer
 
-from .models import User, Categorie, Don, Reservation
+from .models import User, Categorie, Don, Reservation , Notification , Signalisation
 
 class UserSerializer(serializers.ModelSerializer):
+
+    
     class Meta:
         model = User
-        fields = ['id_user', 'username', 'email', 'latitude', 'longitude', 'owner']
+        fields = ['id_user', 'nom', 'email', 'latitude', 'longitude', 'role_user']
         owner = serializers.ReadOnlyField(source="owner.username")
 
 
@@ -24,23 +26,26 @@ class CategorieSerializer(serializers.ModelSerializer):
 class DonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Don
-        fields = ['id_don', 'titre', 'description', 'date_publier', 'date_expiration', 'id_categorie']
+        fields = ['id_don', 'titre', 'description', 'date_publier', 'date_expiration', 'categorie']
         
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['id_reservation', 'id_user', 'id_don', 'date_reservation']  
+        fields = ['id_reservation', 'id_user', 'id_don', 'date_reservation', 'statut_Reserv']  
         
  
 
 
-class notificationSerializer(serializers.ModelSerializer):
+class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Reservation
-        fields = ['id_reservation', 'id_user', 'date_reservation','message'] 
-        
+        model = Notification
+        fields = ['id_notification', 'user', 'message', 'date_notification', 'statut']
+        read_only_fields = ['id_notification', 'date_notification']
 
-class SignalerSerializer(serializers.ModelSerializer):
+      
+
+class SignalisationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Don
-        fields = ['id_don', 'titre', 'description', 'type_don', 'quantite', 'photo_don', 'latitude', 'longitude', 'address', 'date_publier', 'date_expiration', 'statut', 'message', 'id_user', 'id_categorie']
+        model = Signalisation
+        fields = ['id_signalisation', 'user', 'message', 'date_signalisation', 'statut']
+        read_only_fields = ['id_signalisation', 'date_signalisation']
