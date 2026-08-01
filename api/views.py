@@ -1,10 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 
-from .models import User, Categorie, Don, Reservation, notification, Signalisation
+from .models import User, Categorie, Don, Reservation, Notification, Signalisation
 
-from .serializers import UserSerializer, CategorieSerializer, DonSerializer, ReservationSerializer, notificationSerializer, SignalerSerializer        
+from .serializers import UserSerializer, CategorieSerializer, DonSerializer, ReservationSerializer, NotificationSerializer, SignalisationSerializer       
 from rest_framework import generics
-
 
 from rest_framework.reverse import reverse
 
@@ -112,23 +111,23 @@ class ReservationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
 
 #notification views
 class NotificationListCreateView(generics.ListCreateAPIView):
-    queryset = notification.objects.all()
-    serializer_class = notificationSerializer
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
 
 
 class NotificationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = notification.objects.all()
-    serializer_class = notificationSerializer
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
     lookup_field = 'id_notification'
 
 #signalisation views
 class SignalisationListCreateView(generics.ListCreateAPIView):
     queryset = Signalisation.objects.all()
-    serializer_class = SignalerSerializer
+    serializer_class = SignalisationSerializer
 
 
 class SignalisationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Signalisation.objects.all()
-    serializer_class = SignalerSerializer
+    serializer_class = SignalisationSerializer
     lookup_field = 'id_signalisation'
 
